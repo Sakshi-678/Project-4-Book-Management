@@ -22,15 +22,13 @@ const createbook = async (req, res) => {
     try {
         let decodedUserToken = req.user
         const requestbody = req.body;
-        //Authorisation
-        if (!(decodedUserToken == requestbody.userId))
-        {
-            return res.status(403).send({ Message: "you are trying to access a different's user account" })
-        }
         if (!isValidRequestBody(requestbody)) {
             return res.status(400).send({ status: false, message: 'Please provide details in request body' })
         }
-
+        //Authorisation
+        if (!(decodedUserToken == requestbody.userId)) {
+            return res.status(403).send({ Message: "you are trying to access a different's user account" })
+        }
         const { title, excerpt, userId, ISBN, category, subcategory, releasedAt } = requestbody
 
         const TitleinUse = await BooksModel.findOne({ title })
@@ -98,9 +96,10 @@ const getbooks = async (req, res) => {
         const queryParams = req.query
         const filterQuery = { isDeleted: false }
 
-        if (!isValidRequestBody(queryParams)) {
-            return res.status(400).send({ status: false, message: 'Please provide valid query parameters' })
-        }
+        // if (!isValidRequestBody(queryParams)) {
+        //     return res.status(400).send({ status: false, message: 'Please provide valid query parameters' })
+        // }
+
 
         const { userId, category, subcategory } = queryParams
 
@@ -122,8 +121,8 @@ const getbooks = async (req, res) => {
 
         }
 
-        Books.sort(function (a, b) { return b.title - a.title })
-        res.status(200).send({ status: true, message: 'Books list', data: Books })
+        let SortedBook=Books.sort(function (a, b) { return a.title>b.title && 1 || -1 })
+        res.status(200).send({ status: true, message: 'Books list', data: SortedBook })
 
     } catch (err) {
         res.status(500).send({ staus: false, msg: err.message })
@@ -135,18 +134,32 @@ const getbookbyId = async (req, res) => {
     try {
 
         const bookId = req.params.bookId
-        const BookDetail = await BooksModel.find({ _id: bookId, isDeleted: false })
+        let BookDetail = await BooksModel.findOne({ _id: bookId, isDeleted: false })
         if (!BookDetail) {
-            return res.status(400).send({ status: false, message: "BookId is not correct or available in DB or this book is already deleted" })
+            return res.status(400).send({ status: false, message: "BookId is not correct or available in DB or this book is deleted" })
         }
 
-        const reviewsData = await ReviewModel.find({ bookId: bookId, isDeleted: false })
+        let FetchBook = {
+            _id: BookDetail._id,
+            title: BookDetail.title,
+            excerpt: BookDetail.excerpt,
+            userId: BookDetail.userId,
+            ISBN: BookDetail.ISBN,
+            category: BookDetail.category,
+            subcategory: BookDetail.subcategory,
+            reviews: BookDetail.reviews,
+            deletedAt: BookDetail.deletedAt,
+            releasedAt: BookDetail.releasedAt,
+            createdAt: BookDetail.createdAt,
+            updatedAt: BookDetail.updatedAt
+        }
 
-        const data = { BookDetail, reviewsData }
+        let reviewsData = await ReviewModel.find({ bookId: bookId, isDeleted: false }).select({ isDeleted: 0, __v: 0 })
 
-        res.status(200).send({ status: true, data: data })
+        FetchBook.reviewsData = reviewsData;
+        res.status(200).send({ status: true, message: 'Books list', data: FetchBook })
     } catch (err) {
-        res.status(500).send({ staus: false, msg: err.message })
+        res.status(500).send({ status: false, msg: err.message })
     }
 }
 
@@ -164,14 +177,13 @@ const updatebooks = async (req, res) => {
     if (!book) {
         return res.status(404).send({ status: false, message: `Book not found` })
     }
-  //Authorisation
-    if (!(decodedUserToken == book.userId))
-    {
+    //Authorisation
+    if (!(decodedUserToken == book.userId)) {
         return res.status(403).send({ Message: "you are trying to access a different's user account" })
     }
 
     if (!isValidRequestBody(requestBody)) {
-        return res.status(200).send({ status: true, message: 'No paramateres passed. Book unmodified', data: book })
+        return res.status(200).send({ status: false, message: 'No paramateres passed. Book unmodified'})
     }
 
     //Extract requestbody
@@ -182,6 +194,11 @@ const updatebooks = async (req, res) => {
     const TitleinUse = await BooksModel.findOne({ title })
     if (TitleinUse) {
         return res.status(400).send({ status: false, message: "Title is already registered." })
+    }
+
+    if(!isValid(title))
+    {
+        return res.status(400).send({ status: false, message: 'A valid Title is required' })
     }
 
     if (isValid(title)) {
@@ -208,8 +225,10 @@ const updatebooks = async (req, res) => {
         if (!Object.prototype.hasOwnProperty.call(upatedBookData, '$set')) upatedBookData['$set'] = {}
         upatedBookData['$set']['ISBN'] = ISBN
     }
+     
+    upatedBookData['$set']['updatedAt']=new Date()
 
-    const upatedBook = await BooksModel.findOneAndUpdate({ _id: bookId }, upatedBookData, { new: true })
+    const upatedBook = await BooksModel.findOneAndUpdate({ _id: bookId }, upatedBookData,{ new: true })
     res.status(200).send({ status: true, message: 'Books updated successfully', data: upatedBook });
 
 }
@@ -219,7 +238,7 @@ const deletebyBookId = async (req, res) => {
     try {
         let decodedUserToken = req.user
         const bookId = req.params.bookId;
-        
+
         if (!isValidObjectId(bookId)) {
             return res.status(400).send({ status: false, message: `${bookId} is not a valid blog id` })
         }
@@ -230,13 +249,12 @@ const deletebyBookId = async (req, res) => {
             return res.status(404).send({ status: false, message: `Book not found` })
         }
 
-          //Authorisation
-    if (!(decodedUserToken == book.userId))
-    {
-        return res.status(403).send({ Message: "you are trying to access a different's user account" })
-    }
+        //Authorisation
+        if (!(decodedUserToken == book.userId)) {
+            return res.status(403).send({ Message: "you are trying to access a different's user account" })
+        }
 
-        await BooksModel.findOneAndUpdate({ _id: bookId }, { $set: { isDeleted: true, deletedAt: new Date() } })
+        await BooksModel.findOneAndUpdate({ _id: bookId }, { $set: { isDeleted: true, deletedAt: new Date()} })
         res.status(200).send({ status: true, message: `Blog deleted successfully` })
 
     } catch (err) {
@@ -244,4 +262,4 @@ const deletebyBookId = async (req, res) => {
     }
 
 }
-module.exports = { createbook, getbooks, getbookbyId, updatebooks,deletebyBookId }
+module.exports = { createbook, getbooks, getbookbyId, updatebooks, deletebyBookId }

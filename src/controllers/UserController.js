@@ -93,8 +93,7 @@ const loginUser = async (req, res)=> {
     try {
         const requestBody = req.body;
         if(!isValidRequestBody(requestBody)) {
-            res.status(400).send({status: false, message: 'Invalid request parameters. Please provide login details'})
-            return
+            return res.status(400).send({status: false, message: 'Invalid request parameters. Please provide login details'})    
         }
 
         // Extract params
@@ -115,6 +114,10 @@ const loginUser = async (req, res)=> {
             res.status(400).send({status: false, message: `Password is required`})
             return
         }
+        if (!((password.length > 7) && (password.length < 16))) {
+            return res.status(400).send({ status: false, message: `Password length should be between 8 and 15.` })
+        }
+
         // Validation ends
 
         const User = await UserModel.findOne({email, password});
@@ -131,7 +134,7 @@ const loginUser = async (req, res)=> {
         }, 'Group16')
 
         res.header('x-api-key', token);
-        res.status(200).send({status: true, message: `Author login successfull`, data: {token}});
+        res.status(200).send({status: true, message: `User login successfull`, data: {token}});
     } catch (err) {
         res.status(500).send({status: false, message: err.message});
     }

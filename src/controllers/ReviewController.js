@@ -22,14 +22,15 @@ const createReview = async (req, res) => {
         const bookId = req.params.bookId;
         const requestbody = req.body;
 
+
+        if(!isValidObjectId(bookId))
+        {
+            return res.status(400).send({ status: false, message: 'Invalid Book Id' })
+        }
+
         const BookExist = await BooksModel.findById({ _id: bookId, isDeleted: false })
         if (!BookExist) {
             return res.status(400).send({ status: false, message: "Either bookId is not present in DB or book is deleted" })
-        }
-
-        if (!isValid(bookId)) {
-            return res.status(400).send({ status: false, message: `BookId is required` })
-
         }
 
         if (!isValidRequestBody(requestbody)) {

@@ -4,8 +4,7 @@ const UserAuth = async (req, res, next) => {
     try {
         const token = req.header('x-api-key')
         if(!token) {
-            res.status(403).send({status: false, message: `Missing authentication token in request`})
-            return;
+          return res.status(403).send({status: false, message: `Missing authentication token in request`})  
         }
 
         const decoded = await jwt.verify(token, 'Group16')
@@ -18,9 +17,8 @@ const UserAuth = async (req, res, next) => {
         req.user = decoded.UserId;
 
         next()
-    } catch (error) {
-        console.error(`Error! ${error.message}`)
-        res.status(500).send({status: false, message: error.message})
+    } catch (err) {
+        res.status(500).send({status: false, message: err.message})
     }
 }
 
