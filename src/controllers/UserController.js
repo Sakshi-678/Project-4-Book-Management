@@ -75,7 +75,7 @@ const createUser = async (req, res) => {
         }
         password=password.trim()
         if (!isValid(password)) {
-            return res.status(400).send({ status: false, message: `Email is required` })
+            return res.status(400).send({ status: false, message: `Password is required` })
 
         }
 
