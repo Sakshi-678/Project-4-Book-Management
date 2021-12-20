@@ -25,11 +25,14 @@ const createUser = async (req, res) => {
             return res.status(400).send({ status: false, message: 'Please provide details in request body' })
         }
 
-        const { title, name, phone, email, password, address } = requestbody
+        let { title, name, phone, email, password, address } = requestbody
 
         if (!isValid(title)) {
+
             return res.status(400).send({ status: false, message: 'title is required' })
+
         }
+        title = title.trim()
 
         if (!isValidTitle(title)) {
             return res.status(400).send({ status: false, message: `Title should be among Mr, Mrs, Miss.` })
@@ -38,20 +41,24 @@ const createUser = async (req, res) => {
         if (!isValid(name)) {
             return res.status(400).send({ status: false, message: 'name is required' })
         }
+        // name = name.trim()
 
+        
         const PhoneNoinUse = await UserModel.findOne({phone})
         if (PhoneNoinUse) {
             return res.status(400).send({ status: false, message: "Phone Number is already registered." })
         }
-
+       
+       
         if (!isValid(phone)) {
             return res.status(400).send({ status: false, message: 'Phone No is required' })
         }
-
+        phone=phone.trim()
+    
         if (!(/^(\+91[\-\s]?)?[0]?(91)?[789]\d{9}$/.test(phone))) {
             return res.status(400).send({ status: false, message: `Phone Number is not valid` })
         }
-
+        email=email.trim().toLowerCase()
         const EmailinUse = await UserModel.findOne({email})
         if (EmailinUse) {
             return res.status(400).send({ status: false, message: "Email Id is already registered." })
@@ -97,14 +104,15 @@ const loginUser = async (req, res)=> {
         }
 
         // Extract params
-        const {email, password} = requestBody;
+        let {email, password} = requestBody;
         
         // Validation starts
+        
         if(!isValid(email)) {
             res.status(400).send({status: false, message: `Email is required`})
             return
         }
-        
+        email=email.toLowerCase().trim()
         if(!(/^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/.test(email))) {
             res.status(400).send({status: false, message: `Email should be a valid email address`})
             return

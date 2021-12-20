@@ -72,7 +72,7 @@ const updateReview = async (req, res) => {
     }
 
     if (!isValidObjectId(reviewId)) {
-        return res.status(400).send({ status: false, message: `${reviewId} is not a valid book id` })
+        return res.status(400).send({ status: false, message: `${reviewId} is not a valid review id` })
     }
 
     const book = await BooksModel.findOne({ _id: bookId, isDeleted: false })
@@ -83,6 +83,12 @@ const updateReview = async (req, res) => {
     const reviewD = await ReviewModel.findOne({ _id: reviewId, isDeleted: false })
     if (!reviewD) {
         return res.status(404).send({ status: false, message: `Review not found` })
+    }
+    
+    bookId==reviewD.bookId
+    if(!(bookId==reviewD.bookId))
+    {
+        return res.status(400).send({status:false,Message:"Reviewer Id is not valid"})
     }
 
     const { review, rating, reviewedBy } = requestBody;
@@ -127,7 +133,7 @@ const deletebyReviewId = async (req, res) => {
         }
 
         if (!isValidObjectId(reviewId)) {
-            return res.status(400).send({ status: false, message: `${reviewId} is not a valid book id` })
+            return res.status(400).send({ status: false, message: `${reviewId} is not a valid review id` })
         }
 
         const book = await BooksModel.findOne({ _id: bookId, isDeleted: false })
@@ -137,7 +143,13 @@ const deletebyReviewId = async (req, res) => {
 
         const reviewD = await ReviewModel.findOne({ _id: reviewId, isDeleted: false })
         if (!reviewD) {
-            return res.status(404).send({ status: false, message: `Review not found` })
+            return res.status(404).send({ status: false, message: `Review not found or it is deleted` })
+        }
+
+        let vReviewer=(bookId==reviewD.bookId)
+        if(!vReviewer)
+        {
+            return res.status(400).send({status:false,Message:"Reviewer Id is not valid"})
         }
 
         await ReviewModel.findOneAndUpdate({ _id: reviewId }, { $set: { isDeleted: true, } })

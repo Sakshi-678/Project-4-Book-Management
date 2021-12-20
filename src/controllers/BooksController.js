@@ -29,20 +29,21 @@ const createbook = async (req, res) => {
         if (!(decodedUserToken == requestbody.userId)) {
             return res.status(403).send({ Message: "you are trying to access a different's user account" })
         }
-        const { title, excerpt, userId, ISBN, category, subcategory, releasedAt } = requestbody
-
+        let { title, excerpt, userId, ISBN, category, subcategory, releasedAt } = requestbody
+         
+        if (!isValid(title)) {
+            return res.status(400).send({ status: false, message: 'Title is required' })
+        }
+       
         const TitleinUse = await BooksModel.findOne({ title })
         if (TitleinUse) {
             return res.status(400).send({ status: false, message: "Title is already registered." })
         }
-
-        if (!isValid(title)) {
-            return res.status(400).send({ status: false, message: 'Title is required' })
-        }
-
+        
         if (!isValid(excerpt)) {
             return res.status(400).send({ status: false, message: 'Excerpt is required' })
         }
+      
 
         if (!isValid(userId)) {
             return res.status(400).send({ status: false, message: 'userId is required' })
@@ -95,13 +96,20 @@ const getbooks = async (req, res) => {
 
         const queryParams = req.query
         const filterQuery = { isDeleted: false }
-
-        // if (!isValidRequestBody(queryParams)) {
-        //     return res.status(400).send({ status: false, message: 'Please provide valid query parameters' })
-        // }
-
+        if(!isValidRequestBody(queryParams))
+        {
+               let NDeleted=await BooksModel.find(filterQuery).select({ _id: 1, title: 1, excerpt: 1, userId: 1, category: 1, releasedAt: 1, reviews: 1 })
+                 res.status(200).send({ status: true, message: 'Not Deleted Books List', data: NDeleted })
+                 return
+        }
 
         const { userId, category, subcategory } = queryParams
+
+        if(!isValidObjectId(userId))
+       {
+           return res.status(400).send({status:false,message:"User Id is not valid. Please enter it correctly"})
+       }
+
 
         if (isValid(userId) && isValidObjectId(userId)) {
             filterQuery['userId'] = userId
@@ -134,11 +142,17 @@ const getbookbyId = async (req, res) => {
     try {
 
         const bookId = req.params.bookId
+
+        if (!isValidObjectId(bookId)) {
+            return res.status(400).send({ status: false, message: `${bookId} is not a valid book id` })
+        }
+
         let BookDetail = await BooksModel.findOne({ _id: bookId, isDeleted: false })
+
+
         if (!BookDetail) {
             return res.status(400).send({ status: false, message: "BookId is not correct or available in DB or this book is deleted" })
         }
-
         let FetchBook = {
             _id: BookDetail._id,
             title: BookDetail.title,
@@ -164,6 +178,7 @@ const getbookbyId = async (req, res) => {
 }
 
 const updatebooks = async (req, res) => {
+    try{
     let decodedUserToken = req.user
     const requestBody = req.body;
     const bookId = req.params.bookId;
@@ -183,7 +198,7 @@ const updatebooks = async (req, res) => {
     }
 
     if (!isValidRequestBody(requestBody)) {
-        return res.status(200).send({ status: false, message: 'No paramateres passed. Book unmodified'})
+        return res.status(400).send({ status: false, message: 'No paramateres passed. Book unmodified'})
     }
 
     //Extract requestbody
@@ -206,14 +221,29 @@ const updatebooks = async (req, res) => {
         upatedBookData['$set']['title'] = title
     }
 
+    if(!isValid(excerpt))
+    {
+        return res.status(400).send({ status: false, message: 'Excerpt is required' })
+    }
+
     if (isValid(excerpt)) {
         if (!Object.prototype.hasOwnProperty.call(upatedBookData, '$set')) upatedBookData['$set'] = {}
         upatedBookData['$set']['excerpt'] = excerpt
     }
 
+    if(!isValid(releasedAt))
+    {
+        return res.status(400).send({ status: false, message: 'released date is required' })
+    }
+
     if (isValid(releasedAt)) {
         if (!Object.prototype.hasOwnProperty.call(upatedBookData, '$set')) upatedBookData['$set'] = {}
         upatedBookData['$set']['releasedAt'] = releasedAt
+    }
+    const regex=/^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])$/
+    if(!regex.test(releasedAt))
+    {
+        return res.status(400).send({status:false,message:"Date format is not correct."})
     }
 
     const findISBN = await BooksModel.findOne({ ISBN });
@@ -226,10 +256,16 @@ const updatebooks = async (req, res) => {
         upatedBookData['$set']['ISBN'] = ISBN
     }
      
+   
     upatedBookData['$set']['updatedAt']=new Date()
 
     const upatedBook = await BooksModel.findOneAndUpdate({ _id: bookId }, upatedBookData,{ new: true })
     res.status(200).send({ status: true, message: 'Books updated successfully', data: upatedBook });
+
+}catch(err)
+{
+    res.status(500).send({status:false,msg:err.message})
+}
 
 }
 
@@ -240,13 +276,13 @@ const deletebyBookId = async (req, res) => {
         const bookId = req.params.bookId;
 
         if (!isValidObjectId(bookId)) {
-            return res.status(400).send({ status: false, message: `${bookId} is not a valid blog id` })
+            return res.status(400).send({ status: false, message: `${bookId} is not a valid book id` })
         }
 
         const book = await BooksModel.findOne({ _id: bookId, isDeleted: false })
 
         if (!book) {
-            return res.status(404).send({ status: false, message: `Book not found` })
+            return res.status(404).send({ status: false, message: `Book not found or it is deleted` })
         }
 
         //Authorisation
@@ -255,7 +291,7 @@ const deletebyBookId = async (req, res) => {
         }
 
         await BooksModel.findOneAndUpdate({ _id: bookId }, { $set: { isDeleted: true, deletedAt: new Date()} })
-        res.status(200).send({ status: true, message: `Blog deleted successfully` })
+        res.status(200).send({ status: true, message: `Book deleted successfully` })
 
     } catch (err) {
         res.status(500).send({ status: false, message: err.message });
