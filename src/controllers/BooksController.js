@@ -74,6 +74,13 @@ const createbook = async (req, res) => {
         if (!isValid(releasedAt)) {
             return res.status(400).send({ status: false, message: 'Release Date is required' })
         }
+        releasedAt=releasedAt.trim()
+        const regex=/^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])$/
+        if(!regex.test(releasedAt))
+        {
+            return res.status(400).send({status:false,message:"Date format is not correct."})
+        }
+    
 
         //validation ends
 
