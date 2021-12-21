@@ -62,62 +62,63 @@ const createReview = async (req, res) => {
 }
 
 const updateReview = async (req, res) => {
+    try {
 
-    const requestBody = req.body;
-    const bookId = req.params.bookId;
-    const reviewId = req.params.reviewId;
+        const requestBody = req.body;
+        const bookId = req.params.bookId;
+        const reviewId = req.params.reviewId;
 
-    if (!isValidObjectId(bookId)) {
-        return res.status(400).send({ status: false, message: `${bookId} is not a valid book id` })
+        if (!isValidObjectId(bookId)) {
+            return res.status(400).send({ status: false, message: `${bookId} is not a valid book id` })
+        }
+
+        if (!isValidObjectId(reviewId)) {
+            return res.status(400).send({ status: false, message: `${reviewId} is not a valid review id` })
+        }
+
+        const book = await BooksModel.findOne({ _id: bookId, isDeleted: false })
+        if (!book) {
+            return res.status(404).send({ status: false, message: `Book not found` })
+        }
+
+        const reviewD = await ReviewModel.findOne({ _id: reviewId, isDeleted: false })
+        if (!reviewD) {
+            return res.status(404).send({ status: false, message: `Review not found` })
+        }
+
+        bookId == reviewD.bookId
+        if (!(bookId == reviewD.bookId)) {
+            return res.status(400).send({ status: false, Message: "Reviewer Id is not valid" })
+        }
+
+        const { review, rating, reviewedBy } = requestBody;
+
+        const upatedReviewData = {}
+
+        if (isValid(review)) {
+            if (!Object.prototype.hasOwnProperty.call(upatedReviewData, '$set')) upatedReviewData['$set'] = {}
+            upatedReviewData['$set']['review'] = review
+        }
+
+        if (isValid(rating)) {
+            if (!Object.prototype.hasOwnProperty.call(upatedReviewData, '$set')) upatedReviewData['$set'] = {}
+            upatedReviewData['$set']['rating'] = rating
+        }
+
+        if (!((rating > 0) && (rating < 6))) {
+            return res.status(400).send({ status: false, message: `Rating  should be between 1 and 5.` })
+        }
+
+        if (isValid(reviewedBy)) {
+            if (!Object.prototype.hasOwnProperty.call(upatedReviewData, '$set')) upatedReviewData['$set'] = {}
+            upatedReviewData['$set']['reviewedBy'] = reviewedBy
+        }
+
+        const UpdatedReview = await ReviewModel.findOneAndUpdate({ _id: reviewId }, upatedReviewData, { new: true })
+        res.status(200).send({ status: true, message: 'Review updated successfully', data: UpdatedReview });
+    } catch (err) {
+        res.status(500).send({ status: false, message: err.message })
     }
-
-    if (!isValidObjectId(reviewId)) {
-        return res.status(400).send({ status: false, message: `${reviewId} is not a valid review id` })
-    }
-
-    const book = await BooksModel.findOne({ _id: bookId, isDeleted: false })
-    if (!book) {
-        return res.status(404).send({ status: false, message: `Book not found` })
-    }
-
-    const reviewD = await ReviewModel.findOne({ _id: reviewId, isDeleted: false })
-    if (!reviewD) {
-        return res.status(404).send({ status: false, message: `Review not found` })
-    }
-    
-    bookId==reviewD.bookId
-    if(!(bookId==reviewD.bookId))
-    {
-        return res.status(400).send({status:false,Message:"Reviewer Id is not valid"})
-    }
-
-    const { review, rating, reviewedBy } = requestBody;
-
-    const upatedReviewData = {}
-
-    if (isValid(review)) {
-        if (!Object.prototype.hasOwnProperty.call(upatedReviewData, '$set')) upatedReviewData['$set'] = {}
-        upatedReviewData['$set']['review'] = review
-    }
-
-    if (isValid(rating)) {
-        if (!Object.prototype.hasOwnProperty.call(upatedReviewData, '$set')) upatedReviewData['$set'] = {}
-        upatedReviewData['$set']['rating'] = rating
-    }
-
-    if (!((rating > 0) && (rating < 6))) {
-        return res.status(400).send({ status: false, message: `Rating  should be between 1 and 5.` })
-    }
-
-    if (isValid(reviewedBy)) {
-        if (!Object.prototype.hasOwnProperty.call(upatedReviewData, '$set')) upatedReviewData['$set'] = {}
-        upatedReviewData['$set']['reviewedBy'] = reviewedBy
-    }
-
-    const UpdatedReview = await ReviewModel.findOneAndUpdate({ _id: reviewId }, upatedReviewData, { new: true })
-    res.status(200).send({ status: true, message: 'Review updated successfully', data: UpdatedReview });
-
-
 }
 
 const deletebyReviewId = async (req, res) => {
