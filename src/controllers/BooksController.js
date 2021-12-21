@@ -29,7 +29,7 @@ const createbook = async (req, res) => {
         if (!(decodedUserToken == requestbody.userId)) {
             return res.status(403).send({ Message: "you are trying to access a different's user account" })
         }
-        let { title, excerpt, userId, ISBN, category, subcategory, releasedAt } = requestbody
+        let { title,bookcover, excerpt, userId, ISBN, category, subcategory, releasedAt } = requestbody
          
         if (!isValid(title)) {
             return res.status(400).send({ status: false, message: 'Title is required' })
@@ -84,7 +84,7 @@ const createbook = async (req, res) => {
 
         //validation ends
 
-        const Bookdata = { title, excerpt, userId, ISBN, category, subcategory, releasedAt }
+        const Bookdata = { title,bookcover, excerpt, userId, ISBN, category, subcategory, releasedAt }
 
         let Book = await BooksModel.create(Bookdata)
 
