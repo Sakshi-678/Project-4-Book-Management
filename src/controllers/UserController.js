@@ -53,7 +53,7 @@ const createUser = async (req, res) => {
         if (!isValid(phone)) {
             return res.status(400).send({ status: false, message: 'Phone No is required' })
         }
-        phone=phone.trim()
+        phone = phone.trim()
     
         if (!(/^(\+91[\-\s]?)?[0]?(91)?[789]\d{9}$/.test(phone))) {
             return res.status(400).send({ status: false, message: `Phone Number is not valid` })

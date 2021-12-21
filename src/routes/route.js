@@ -16,7 +16,7 @@ router.post('/register',usercontroller.createUser)
 router.post('/login',usercontroller.loginUser)
 
 //Books API
-router.post('/books',Middleware.UserAuth,bookcontroller.createbook)
+router.post('/createbooks',Middleware.UserAuth,bookcontroller.createbook)
 router.get('/books',Middleware.UserAuth,bookcontroller.getbooks)
 router.get('/books/:bookId',Middleware.UserAuth,bookcontroller.getbookbyId)
 router.put('/books/:bookId',Middleware.UserAuth,bookcontroller.updatebooks)

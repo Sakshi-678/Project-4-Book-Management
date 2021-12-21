@@ -112,10 +112,10 @@ const getbooks = async (req, res) => {
 
         const { userId, category, subcategory } = queryParams
 
-        if(!isValidObjectId(userId))
-       {
-           return res.status(400).send({status:false,message:"User Id is not valid. Please enter it correctly"})
-       }
+    //     if(!isValidObjectId(userId))
+    //    {
+    //        return res.status(400).send({status:false,message:"User Id is not valid. Please enter it correctly"})
+    //    }
 
 
         if (isValid(userId) && isValidObjectId(userId)) {
