@@ -138,11 +138,12 @@ const loginUser = async (req, res)=> {
         const token = await jwt.sign({
             UserId: User._id,
             iat: Math.floor(Date.now() / 1000),
-            exp: Math.floor(Date.now() / 1000) + 30*60
+            exp: Math.floor(Date.now() / 1000) + 30000*60
         }, 'Group16')
 
         res.header('x-api-key', token);
-        res.status(200).send({status: true, message: `User login successfull`, data: {token}});
+        res.status(200).send({status: true, message: `User login successfull`, userId:User._id, token
+        });
     } catch (err) {
         res.status(500).send({status: false, message: err.message});
     }
